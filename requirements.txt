@@ -26,6 +26,3 @@ gtts # for tts
 pydub # for tts
 pydantic
 
-# for sphinx:
-pathspec
-

@@ -1,0 +1,20 @@
+# Core Sphinx package
+sphinx>=4.0,<5.0
+
+# for sphinx:
+pathspec
+
+
+# HTML Themes
+sphinx_rtd_theme
+alabaster
+
+# Extensions
+sphinx-autodoc
+sphinx-viewcode
+sphinx-autosummary
+sphinx-ignore-ext
+myst-parser
+
+# Optional: If you're using sphinx-autoapi (commented out in your config)
+sphinx-autoapi
