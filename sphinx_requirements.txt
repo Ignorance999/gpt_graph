@@ -10,9 +10,6 @@ sphinx_rtd_theme
 alabaster
 
 # Extensions
-sphinx-autodoc
-sphinx-viewcode
-sphinx-autosummary
 sphinx-ignore-ext
 myst-parser
 
