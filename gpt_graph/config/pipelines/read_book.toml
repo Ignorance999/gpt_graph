@@ -1,0 +1,56 @@
+[ReadBook]
+    [ReadBook.create_initial_nodes]
+    # No parameters specified
+
+    [ReadBook.filter]
+    if_ask_user = true
+
+    [ReadBook.summarizer]
+    model_name = "test"#"claude_haiku"
+    prompt = "[PROMPT_TRANSLATE]"  # Assuming this is a string reference
+    max_token_count = 1000
+    grouping_method = "accumulate"
+    step_type = "node_to_node"
+    prompt_params = {"target_language" = "chinese"}
+
+    [ReadBook.saver]
+    output_folder = "[OUTPUT_FOLDER]"
+    if_order = true    
+    '<UPDATE_INPUT_SCHEMA>' = {"title" = {'filter_cri' = {"step_name" = {'$regex' = "filter", '$order' = -1}},'field' = 'extra.title'}}
+
+    [ReadBook.tts]
+    if_input_file_path = true
+    used_language = "zh"
+
+    [ReadBook.google_drive]
+    drive_folder_path = "[DRIVE_FOLDER_PATH]"
+
+    [ReadBook.router]
+    # No parameters specified
+
+    [ReadBook.set_data]
+    # No parameters specified
+
+    [ReadBook.dir_file_lister]
+    recursive = false
+    regex_pattern = "<NONE>"
+
+    [ReadBook.text_extract]
+    output_file_path = "<NONE>"
+    word_limit = "<NONE>"
+    if_save = true
+    if_return_path = false
+
+    [ReadBook.pdf_splitter]
+    # No parameters specified
+
+    [ReadBook.youtube_lister]
+    word_limit = "<NONE>"
+    max_num_entries = "<NONE>"
+    output_dir = "[OUTPUT_FOLDER]"
+
+    [ReadBook.webscraper]
+    word_limit = "<NONE>"
+    driver = "<NONE>"
+    output_dir = "[OUTPUT_FOLDER]"
+    file_name_config = {"if_with_date" = true, "prefix" = "", "suffix" = ""}

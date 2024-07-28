@@ -1,0 +1,45 @@
+ _What is The Singularity?_
+
+              The acceleration of technological progress has been the central
+         feature of this century. I argue in this paper that we are on the edge
+         of change comparable to the rise of human life on Earth. The precise
+         cause of this change is the imminent creation by technology of
+         entities with greater than human intelligence. There are several means
+         by which science may achieve this breakthrough (and this is another
+         reason for having confidence that the event will occur):
+            o The development of computers that are "awake" and
+              superhumanly intelligent. (To date, most controversy in the
+              area of AI relates to whether we can create human equivalence
+              in a machine. But if the answer is "yes, we can", then there
+              is little doubt that beings more intelligent can be constructed
+              shortly thereafter.
+            o Large computer networks (and their associated users) may "wake
+              up" as a superhumanly intelligent entity.
+            o Computer/human interfaces may become so intimate that users
+              may reasonably be considered superhumanly intelligent.
+            o Biological science may find ways to improve upon the natural
+              human intellect.
+
+              The first three possibilities depend in large part on 
+         improvements in computer hardware. Progress in computer hardware has
+         followed an amazingly steady curve in the last few decades [16]. Based
+         largely on this trend, I believe that the creation of greater than
+         human intelligence will occur during the next thirty years.  (Charles
+         Platt [19] has pointed out the AI enthusiasts have been making claims
+         like this for the last thirty years. Just so I'm not guilty of a
+         relative-time ambiguity, let me more specific: I'll be surprised if
+         this event occurs before 2005 or after 2030.)
+
+              What are the consequences of this event? When greater-than-human
+         intelligence drives progress, that progress will be much more rapid.
+         In fact, there seems no reason why progress itself would not involve
+         the creation of still more intelligent entities -- on a still-shorter
+         time scale. The best analogy that I see is with the evolutionary past:
+         Animals can adapt to problems and make inventions, but often no faster
+         than natural selection can do its work -- the world acts as its own
+         simulator in the case of natural selection. We humans have the ability
+         to internalize the world and conduct "what if's" in our heads; we can
+         solve many problems thousands of times faster than natural selection.
+         Now, by creating the means to execute those simulations at much higher
+         speeds, we are entering a regime as radically different from our human
+         past as we humans are from the lower animals.

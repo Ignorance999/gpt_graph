@@ -1,0 +1,23 @@
+
+
+# Pipeline-wise parameters
+y = 5
+
+# Component-specific parameters
+[Testf]
+y = 2
+
+[Testf2]
+y= 1
+
+[Testf3]
+y = 4
+y2 = 3
+
+[p5]
+    [p5.Testf]
+    y = 5
+
+    [p5.Testf2]
+    y = 6
+

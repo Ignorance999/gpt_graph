@@ -1,0 +1,8 @@
+[GoogleDriveUploader]
+    credentials_folder = '.\config\credentials'#"CREDENTIALS_FOLDER"  # Environmental variable or provided during function call
+    if_service_account = true  # Default value
+    google_service_account_file = 'XXXXXX.json'
+    parent_folder_id = "XXXXXX"  #  variable or provided during function call
+    mimetype = "audio/mp3"  # Default value
+    file_metadata = '<NONE>'  # Optional, derived if not provided
+

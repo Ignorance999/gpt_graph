@@ -1,0 +1,78 @@
+[test]
+model_id = "test"
+if_openai = true
+# this is test only and will return dummy
+
+[mixtral]
+model_id = "openrouter/mistralai/mixtral-8x22b:free"
+if_openai = false
+
+[mixtral8x7b]
+model_id = "openrouter/mistralai/mixtral-8x7b-instruct:nitro"
+if_openai = false
+
+[mistral]
+model_id = "openrouter/mistralai/mistral-7b-instruct:free"
+if_openai = false
+max_tokens = 9999
+
+[claude]
+model_id = "openrouter/anthropic/claude-instant-v1"
+if_openai = false
+
+[claude_haiku]
+model_id = "openrouter/anthropic/claude-3-haiku:beta"
+if_openai = false
+
+[llama_8b]
+model_id = "openrouter/lynn/soliloquy-l3"
+if_openai = true
+
+[chat_gpt3]
+model_id = "openai/gpt-3.5-turbo"
+if_openai = true
+
+[chat_gpt3_old]
+model_id = "openai/gpt-3.5-turbo-0125"
+if_openai = true
+
+[chat_gpt4]
+model_id = "openai/gpt-4"
+if_openai = true
+
+[chat_gpt4_turbo]
+model_id = "openai/gpt-4-turbo-preview"
+if_openai = true
+
+[chat_gpt4o_mini]
+model_id = "openai/gpt-4o-mini"
+if_openai = true
+
+[google]
+model_id = "openrouter/google/gemini-pro"
+if_openai = false
+
+[google_flash]
+model_id = "openrouter/google/gemini-flash-1.5"
+if_openai = true
+
+[gemma]
+model_id = "openrouter/google/gemma-2-9b-it:free"
+if_openai = false
+
+[qwen]
+model_id = "openrouter/qwen/qwen-2-7b-instruct:free"
+if_openai = false
+
+[perplexity]
+model_id = "openrouter/perplexity/pplx-70b-online"
+if_openai = false
+
+[small_cost]
+model_id = "openrouter/perplexity/sonar-small-chat"
+if_openai = false
+max_tokens = 16000
+
+[groq]
+model_id = "groq/llama3-70b-8192"
+if_openai = true

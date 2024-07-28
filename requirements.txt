@@ -1,0 +1,28 @@
+
+pyqt5 # for component: filter
+pywin32
+
+
+google-api-python-client # for google drive
+google-auth-oauthlib
+
+
+litellm==1.24.5 # must have
+instructor # for llm
+jsonfinder # for llm
+numpy
+matplotlib #graph
+pandas
+pyvis #graph
+mongoquery # for graph filter nodes
+tomlkit
+func_timeout
+
+bs4 # for web scraper
+pdfkit #webscraper
+python-docx # docx
+openpyxl
+gtts # for tts
+pydub # for tts
+pydantic
+

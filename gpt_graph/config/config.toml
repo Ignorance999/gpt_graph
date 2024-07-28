@@ -1,0 +1,23 @@
+version = 'DEV'
+
+# for testing load_env func only (useless in production)
+TEST_LOAD_ENV_CONFIG = 'Y'
+
+
+
+[path] 
+    [path.ReadBook]
+    params = '.\config\pipelines\read_book.toml'
+    placeholders = '.\prompts\prompts_read_book.py'
+
+    [path.Testf]
+    params = '.\config\test_params.toml'
+    [path.Testf2]
+    params = '.\config\test_params.toml'
+    [path.Testf3]
+    params = '.\config\test_params.toml'
+    [path.p5]
+    params = '.\config\test_params.toml'
+
+    [path.GoogleDriveUploader]
+    params = '.\config\components\google_drive.toml'
