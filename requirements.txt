@@ -1,6 +1,6 @@
 
 pyqt5 # for component: filter
-pywin32; sys_platform == 'win32'
+pywin32
 
 
 google-api-python-client # for google drive
@@ -25,4 +25,7 @@ openpyxl
 gtts # for tts
 pydub # for tts
 pydantic
+
+# for sphinx:
+pathspec
 
