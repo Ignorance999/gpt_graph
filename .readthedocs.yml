@@ -9,6 +9,5 @@ sphinx:
   configuration: docs/source/conf.py
 
 python:
-  version: 3.9
   install:
     - requirements: requirements.txt
