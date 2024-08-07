@@ -8,7 +8,7 @@ Created on Fri Mar 29 11:13:01 2024
 # from gpt_graph.components.functions import call_llm_model, ddg_search
 
 # classes
-from gpt_graph.components.web_scraper import WebScraper
+# from gpt_graph.components.web_scraper import WebScraper
 from gpt_graph.components.text_extractor import TextExtractor
 
 from gpt_graph.components.tts import TextToSpeech
@@ -19,7 +19,7 @@ from gpt_graph.components.filter import Filter
 # from gpt_graph.components.combine_mp3 import CombineMP3
 # from gpt_graph.components.google_email import SendEmail
 from gpt_graph.components.dir_file_lister import DirFileLister
-from gpt_graph.components.youtube_lister import YouTubeLister
+# from gpt_graph.components.youtube_lister import YouTubeLister
 
 # from gpt_graph.components.splitters.pdf_bookmark_splitter import PDFBookmarkSplitter
 from gpt_graph.components.splitters.pdf_splitter import PDFSplitter
