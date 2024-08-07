@@ -262,3 +262,67 @@ class Group:
             # Non-yield mode: return all nodes every time
             input_key_nodes = [sub_group.nodes for sub_group in self.contains]
             return input_key_nodes
+        
+if __name__ == "__main__":
+    # Import necessary modules
+    from gpt_graph.utils.uuid_ex import uuid_ex
+    from gpt_graph.utils.get_nested_value import get_nested_value
+    
+    # Assuming we have a NodeGraph class implementation
+    class NodeGraph:
+        def __init__(self):
+            self.nodes = []
+
+        def add_node(self, node):
+            self.nodes.append(node)
+
+        def filter_nodes(self, filter_cri):
+            # Simple implementation for demonstration
+            return [node for node in self.nodes if all(node.get(k) == v for k, v in filter_cri.items())]
+
+    # Create a sample node graph
+    node_graph = NodeGraph()
+    node_graph.add_node({"node_id": 1, "type": "A", "value": 10})
+    node_graph.add_node({"node_id": 2, "type": "A", "value": 20})
+    node_graph.add_node({"node_id": 3, "type": "B", "value": 30})
+    node_graph.add_node({"node_id": 4, "type": "B", "value": 40})
+
+    # Create a Group instance
+    group = Group(node_graph=node_graph)
+
+    # Example 1: Simple grouping by type
+    result1 = group.run(group_key="type")
+    print("Example 1: Grouping by type")
+    for subgroup in result1:
+        print(f"Subgroup {subgroup.gid}: {[node['node_id'] for node in subgroup.nodes]}")
+
+    # Example 2: Filtering and grouping
+    result2 = group.run(filter_cri={"type": "A"}, group_key="value")
+    print("\nExample 2: Filtering type 'A' and grouping by value")
+    for subgroup in result2:
+        print(f"Subgroup {subgroup.gid}: {[node['node_id'] for node in subgroup.nodes]}")
+
+    # Example 3: Complex grouping using a dictionary of functions
+    def value_category(value):
+        return "Low" if value < 25 else "High"
+
+    result3 = group.run(group_key={"value": value_category})
+    print("\nExample 3: Grouping by value category (Low/High)")
+    for subgroup in result3:
+        print(f"Subgroup {subgroup.gid}: {[node['node_id'] for node in subgroup.nodes]}")
+
+    # Example 4: Using get_nodes method
+    group.run(group_key="type")  # Run grouping first
+    print("\nExample 4: Using get_nodes method")
+    all_nodes = group.get_nodes(if_yield=False)
+    for i, subgroup_nodes in enumerate(all_nodes):
+        print(f"Subgroup {i}: {[node['node_id'] for node in subgroup_nodes]}")
+
+    # Example 5: Using get_nodes method with yield
+    print("\nExample 5: Using get_nodes method with yield")
+    group.if_yield = True
+    while True:
+        nodes = group.get_nodes()
+        if nodes is None:
+            break
+        print(f"Yielded nodes: {[node['node_id'] for node in nodes]}")

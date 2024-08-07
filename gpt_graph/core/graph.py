@@ -35,6 +35,8 @@ class Graph:
         self,
         filter_cri=None,
         children=None,
+        parents=None,
+        relatives=None,
         if_inclusive=False,
         if_output_when_possible=True,
     ):
@@ -56,6 +58,8 @@ class Graph:
         nodes = self.filter_nodes(
             filter_cri,
             children=children,
+            parents=parents,
+            relatives=relatives,
             if_inclusive=if_inclusive,
         )
 
@@ -119,6 +123,69 @@ class Graph:
             changes["added_nodes"] = [self.graph.nodes[key] for key in added_keys]
             changes["removed_keys"] = list(removed_keys)
 
+    def if_nodes_linked(self, node1, node2):
+        """
+        Checks if two nodes are linked in the graph, directly or indirectly.
+
+        Args:
+            node1 (dict or immutant): First node or its node_id
+            node2 (dict or immutant): Second node or its node_id
+
+        Returns:
+            bool: True if there's a path between the nodes, False otherwise
+
+        Notes:
+            - This function checks for any path between the nodes, not just direct edges.
+            - It uses a breadth-first search to find a path.
+        """
+        # Convert nodes to node_ids if they are dictionaries
+        node1_id = self._node_or_id_to_id_list(node1)[0]
+        node2_id = self._node_or_id_to_id_list(node2)[0]
+        # node1["node_id"] if isinstance(node1, dict) else node1
+
+        # Check if both nodes exist in the graph
+        if not (self.graph.has_node(node1_id) and self.graph.has_node(node2_id)):
+            return False
+
+        # Use NetworkX's has_path function to check for any connection
+        result = nx.has_path(self.graph, node1_id, node2_id) or nx.has_path(
+            self.graph, node2_id, node1_id
+        )
+        return result
+
+    def filter_connected_node_groups(self, node_group1, node_group2):
+        """
+        Filter two groups of nodes or node IDs, retaining only those that have at least one path
+        connecting them to a node in the other group in either direction.
+
+        :param node_group1: List of nodes or node IDs for the first group
+        :param node_group2: List of nodes or node IDs for the second group
+        :return: Tuple of two lists containing the filtered nodes or node IDs for each group
+        """
+        # Convert input groups to lists of node IDs
+        group1_ids = self._node_or_id_to_id_list(node_group1)
+        group2_ids = self._node_or_id_to_id_list(node_group2)
+
+        filtered_indices1 = []
+        filtered_indices2 = []
+
+        for i, node1 in enumerate(group1_ids):
+            for j, node2 in enumerate(group2_ids):
+                if nx.has_path(self.graph, node1, node2) or nx.has_path(
+                    self.graph, node2, node1
+                ):
+                    if i not in filtered_indices1:
+                        filtered_indices1.append(i)
+                    if j not in filtered_indices2:
+                        filtered_indices2.append(j)
+                    break  # Move to the next node in group1
+
+        # Use the filtered indices to select from the original input groups
+        filtered_group1 = [node_group1[i] for i in filtered_indices1]
+        filtered_group2 = [node_group2[i] for i in filtered_indices2]
+
+        return filtered_group1, filtered_group2
+
     def add_node(
         self,
         content,
@@ -131,7 +198,7 @@ class Graph:
         parent_nodes=None,
         # group_id=None,
         verbose=True,
-        extra={},
+        extra=None,
         if_output=True,
         **kwargs,
     ):
@@ -178,7 +245,7 @@ class Graph:
             # "group_id": group_id,
             "step_name": step_name,
             "step_id": step_id,
-            "extra": extra,
+            "extra": extra or {},
             "parent_ids": parent_node_ids,
             "if_output": if_output,
             **kwargs,
@@ -315,27 +382,30 @@ class Graph:
 
     def filter_nodes(
         self,
-        filter_cri={},  # also called filter_cri
+        filter_cri={},
         if_inclusive=False,
         children=None,
         parents=None,
+        relatives=None,
     ):
         """
         Filters graph nodes based on attributes and relationships.
 
         Process:
-        1. Finds candidate nodes based on parent/child relationships:
-        - If parents specified: selects descendants (and parents if inclusive)
-        - If children specified: selects ancestors (and children if inclusive)
-        - If both: intersects the two sets
+        1. Determines candidate nodes based on parent/child/relative relationships:
+        - If only parents specified: selects descendants (and parents if inclusive)
+        - If only children specified: selects ancestors (and children if inclusive)
+        - If both parents and children specified: intersects the two sets
+        - If relatives specified: treats them as both parents and children
         2. Collects data for candidate nodes
         3. Applies attribute filtering using MQL on collected node data
 
         Args:
             filter_cri (dict): MQL-style filtering criteria
-            if_inclusive (bool): Include parent/child nodes in results
+            if_inclusive (bool): Include parent/child/relative nodes in results
             children (nodes/id or list of nodes/id): Filter by child nodes
             parents (nodes/id or list of nodes/id): Filter by parent nodes
+            relatives (nodes/id or list of nodes/id): Filter by relative nodes (treated as both parents and children)
 
         Returns:
             list: Filtered node data
@@ -346,37 +416,116 @@ class Graph:
         """
         filter_cri = filter_cri or {}
 
-        if parents is not None:
-            candidate_nodes_parents = set()
-            parent_ids = self._node_or_id_to_id_list(parents)
-            for parent_id in parent_ids:
+        def get_candidate_nodes(nodes, get_related_func):
+            candidate_nodes = set()
+            node_ids = self._node_or_id_to_id_list(nodes)
+            for node_id in node_ids:
                 if if_inclusive:
-                    candidate_nodes_parents.add(parent_id)
-                candidate_nodes_parents.update(nx.descendants(self.graph, parent_id))
-        else:
-            candidate_nodes_parents = set(self.graph.nodes())
+                    candidate_nodes.add(node_id)
+                candidate_nodes.update(get_related_func(self.graph, node_id))
+            return candidate_nodes
+
+        candidate_nodes = set()
+
+        if parents is not None:
+            candidate_nodes.update(get_candidate_nodes(parents, nx.descendants))
 
         if children is not None:
-            candidate_nodes_children = set()
-            child_ids = self._node_or_id_to_id_list(children)
-            for child_id in child_ids:
-                if if_inclusive:
-                    candidate_nodes_children.add(child_id)
-                candidate_nodes_children.update(nx.ancestors(self.graph, child_id))
-        else:
-            candidate_nodes_children = set(self.graph.nodes())
+            if candidate_nodes:
+                candidate_nodes.intersection_update(
+                    get_candidate_nodes(children, nx.ancestors)
+                )
+            else:
+                candidate_nodes.update(get_candidate_nodes(children, nx.ancestors))
 
-        candidate_nodes = candidate_nodes_children.intersection(candidate_nodes_parents)
+        if relatives is not None:
+            relative_descendants = get_candidate_nodes(relatives, nx.descendants)
+            relative_ancestors = get_candidate_nodes(relatives, nx.ancestors)
+            if candidate_nodes:
+                candidate_nodes.intersection_update(
+                    relative_descendants.union(relative_ancestors)
+                )
+            else:
+                candidate_nodes = relative_descendants.union(relative_ancestors)
 
-        nodes = []
-        for node_id, node_data in self.graph.nodes(data=True):
-            if node_id in candidate_nodes:
-                nodes.append(node_data)
+        if not candidate_nodes:
+            candidate_nodes = set(self.graph.nodes())
+
+        nodes = [
+            node_data
+            for node_id, node_data in self.graph.nodes(data=True)
+            if node_id in candidate_nodes
+        ]
 
         # Use mql to filter nodes
         filtered_nodes = mql(nodes, filter_cri)
 
         return filtered_nodes
+
+    # def filter_nodes(
+    #     self,
+    #     filter_cri={},  # also called filter_cri
+    #     if_inclusive=False,
+    #     children=None,
+    #     parents=None,
+    # ):
+    #     """
+    #     Filters graph nodes based on attributes and relationships.
+
+    #     Process:
+    #     1. Finds candidate nodes based on parent/child relationships:
+    #     - If parents specified: selects descendants (and parents if inclusive)
+    #     - If children specified: selects ancestors (and children if inclusive)
+    #     - If both: intersects the two sets
+    #     2. Collects data for candidate nodes
+    #     3. Applies attribute filtering using MQL on collected node data
+
+    #     Args:
+    #         filter_cri (dict): MQL-style filtering criteria
+    #         if_inclusive (bool): Include parent/child nodes in results
+    #         children (nodes/id or list of nodes/id): Filter by child nodes
+    #         parents (nodes/id or list of nodes/id): Filter by parent nodes
+
+    #     Returns:
+    #         list: Filtered node data
+
+    #     Notes:
+    #         - Supports dot notation in attribute keys
+    #         - mql allows $order and $lambda operations. mql is from utils folder. check it for more details
+    #     """
+    #     filter_cri = filter_cri or {}
+
+    #     if parents is not None:
+    #         candidate_nodes_parents = set()
+    #         parent_ids = self._node_or_id_to_id_list(parents)
+    #         for parent_id in parent_ids:
+    #             if if_inclusive:
+    #                 candidate_nodes_parents.add(parent_id)
+    #             candidate_nodes_parents.update(nx.descendants(self.graph, parent_id))
+    #     else:
+    #         candidate_nodes_parents = set(self.graph.nodes())
+
+    #     if children is not None:
+    #         candidate_nodes_children = set()
+    #         child_ids = self._node_or_id_to_id_list(children)
+    #         for child_id in child_ids:
+    #             if if_inclusive:
+    #                 candidate_nodes_children.add(child_id)
+    #             candidate_nodes_children.update(nx.ancestors(self.graph, child_id))
+    #     else:
+    #         candidate_nodes_children = set(self.graph.nodes())
+
+    #     candidate_nodes = candidate_nodes_children.intersection(candidate_nodes_parents)
+
+    #     nodes = []
+    #     for node_id, node_data in self.graph.nodes(data=True):
+    #         if node_id in candidate_nodes:
+    #             nodes.append(node_data)
+
+    #     # Use mql to filter nodes
+    #     filtered_nodes = mql(nodes, filter_cri)
+
+    #     return filtered_nodes
 
     def remove_nodes(self, filter_cri, **kwargs):
         nodes_to_remove = self.filter_nodes(filter_cri, **kwargs)
@@ -571,31 +720,37 @@ class Graph:
         filtered_nodes = self.filter_nodes(**kwargs)
         pprint.pprint({j["node_id"]: j["type"] for j in filtered_nodes})
 
-    def show_nodes_by_attr(self, attr="step_id", filter_cri={}):
+    def show_nodes_by_attr(
+        self, attr="step_id", filter_cri={}, if_print=True, if_save=False
+    ):
         """
-        Displays nodes grouped by a specified attribute. Checking func
+        Displays or saves nodes grouped by a specified attribute.
 
         Args:
-            attr (str): Attribute to group by. Default: "group_id"
-            filter_cri: Filtering criteria for nodes
+            attr (str): Attribute to group by. Default: "step_id"
+            filter_cri (dict): Filtering criteria for nodes
+            if_print (bool): Whether to print the grouped nodes. Default: True
+            if_save (bool): Whether to save the grouped nodes. Default: False
 
         Process:
         1. Filters nodes using provided criteria
         2. Groups nodes by specified attribute
-        3. Collects type, func_name, and ids for each group
-        4. Prints grouped info
+        3. Collects type and ids for each group
+        4. Prints grouped info if if_print is True
+        5. Saves grouped info if if_save is True
 
         Output format:
         {attr_value}: {'type': type, 'ids': [node_ids]}
 
         Note: Useful for quick node overview by any attribute
         """
+        from gpt_graph.core.closure import Closure
+
         filtered_nodes = self.filter_nodes(filter_cri)
         attr_dict = {}
         for node_attrs in filtered_nodes:
             attr_value = node_attrs.get(attr)
             node_type = node_attrs.get("type")
-            # func_name = node_attrs.get("func_name")
             node_id = node_attrs.get("node_id")
 
             if attr_value not in attr_dict:
@@ -604,13 +759,22 @@ class Graph:
             if "type" not in attr_dict[attr_value]:
                 attr_dict[attr_value]["type"] = node_type
 
-            # if "func_name" not in attr_dict[attr_value]:
-            # attr_dict[attr_value]["func_name"] = func_name
-
             attr_dict[attr_value]["ids"].append(node_id)
 
-        for key, value in attr_dict.items():
-            print(f"{key}: {value}")
+        if if_print:
+            for key, value in attr_dict.items():
+                print(f"{key}: {value}")
+
+        if if_save:
+            custom_data = {"grouped_nodes": attr_dict}
+            Closure.save_elements(
+                self,
+                element_type="grouped_nodes",
+                filename=None,
+                custom_data=custom_data,
+            )
+
+        return attr_dict
 
     def save(self, filter_cri=None):
         from gpt_graph.core.closure import Closure

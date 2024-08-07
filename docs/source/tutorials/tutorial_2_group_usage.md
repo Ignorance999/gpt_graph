@@ -130,7 +130,7 @@ text = 26 (2 characters)
    - `parent_filter_cri={"step_name": {"$regex": "f4", "$order": -1}}`
 first filter f6, results are 6 nodes -> 12,11,10,11,8,7
 second filter f4, results are 2 nodes -> 12, 11
-12 -> 12,11,10 and 11->11,8,7
+12 -> 12,11,10 and 11->11,8,7; -> means the linkings relationship between parent and child nodes, as f4 | f6
 Therefore, g is a list of Group, first contains 3 nodes 12,11,10; second contains 3 nodes 11,8,7
 ```python
 s.p6.contains[-1].input_schema["x"]["group"].contains

@@ -12,12 +12,7 @@ Welcome to gpt_graph's documentation!
 
    hello_world
    structure
-   tutorial_1_basics
-   tutorial_2_group_usage
-   tutorial_3_pp_as_component
-   tutorial_4_params
-   tutorial_5_list_as_component
-   tutorial_6_read_book
+   tutorials
    debug_tips.md
    api
 

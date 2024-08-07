@@ -31,9 +31,11 @@ Important notes:
 
 The `ReadBook` class initializes various components needed for the pipeline, including:
 
+- WebScraper
 - TextExtractor
 - TextToSpeech (optional)
 - GoogleDriveUploader (optional)
+- YouTubeLister
 - DirFileLister
 - PDFSplitter
 - Summarizer
@@ -47,11 +49,13 @@ Each component is initialized with specific parameters and configurations. The p
 class ReadBook(Pipeline):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.filter = Filter()        
+        self.filter = Filter()
+        self.youtube_lister = YouTubeLister()
         self.dir_file_lister = DirFileLister()
         self.pdf_splitter = PDFSplitter()
         self.summarizer = Summarizer()
-        self.saver = Saver()        
+        self.saver = Saver()
+        self.webscraper = WebScraper()
         self.text_extract = TextExtractor()
         self.tts = TextToSpeech()
         self.google_drive = GoogleDriveUploader()
@@ -70,7 +74,9 @@ class ReadBook(Pipeline):
         ) + [
             self.set_data,  # router
             self.pdf_splitter,  # router
-            self.dir_file_lister,  # router            
+            self.dir_file_lister,  # router
+            self.youtube_lister,  # router
+            self.webscraper,  # router
             self.text_extract,  # router
         ]
 
@@ -96,12 +102,13 @@ class ReadBook(Pipeline):
      - The UUID of the former Component is put into the latter's bindings.
    - During Pipeline.run:
      - After running each Step, each Component's bindings are checked.
-     - If bindings are satisfied, the Component creates a Step.
+     - If Component.bindings are satisfied, the Component creates a Step.
      - This Step is then put into the Pipeline's sub_steps_q.
 
 2. Adding Components to Pipeline (+)
    - When a Component is added (+) to the Pipeline:
      - It will not run automatically after the previous Step.
+     - It is just added into Pipeline.contains list
    - Possible triggering mechanisms:
      - Other Steps can "route_to" the Component to create a step.
      - Components may have special bindings attributes that trigger at specific times.
@@ -152,7 +159,7 @@ def router(self):
 ```
 ```
 ```
-using @component inside the Pipeline class is treated specially than normal. As you can see the input of such Component is "self". When running the Pipeline, router will not be bound to self at first. It will be transformed into a Component using @. But after it has created Steps, and when such Step is run, "self" will be plugged into the function as Pipeline itself. Therefore, router can use any methods available for the Pipeline, including self.route_to, which will create Steps for the Component with specific base_name.
+using @component inside the Pipeline class is treated in a special way. As you can see the input of such Component is "self". When running the Pipeline, router will not be bound to self at first. It will be transformed into a Component using @. But after it has created Steps, and when such Step is run, "self" will be plugged into the function as Pipeline itself. Therefore, router can use any methods available for the Pipeline, including self.route_to, which will create Steps for the Component with specific base_name.
 
 
 ### Set Data Component

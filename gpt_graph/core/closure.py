@@ -579,10 +579,18 @@ class Closure:
         ):
             is_match = False
             if cp_name_tuple:
-                is_match = (
-                    cp.__class__.__name__ == cp_name_tuple[0]
-                    or getattr(cp, "base_name", "") == cp_name_tuple[0]
-                )
+                target_name = cp_name_tuple[0]
+                if "." in target_name:
+                    base_name, lid = target_name.split(".", 1)
+                    is_match = (
+                        cp.__class__.__name__ == base_name
+                        or getattr(cp, "base_name", "") == base_name
+                    ) and str(getattr(cp, "lid", "")) == lid
+                else:
+                    is_match = (
+                        cp.__class__.__name__ == target_name
+                        or getattr(cp, "base_name", "") == target_name
+                    )
 
             # Always multiply by 2 when going down a level
             depth_priority *= 2
@@ -604,6 +612,11 @@ class Closure:
                             cp.update_input_schema(param_value)
                         if if_verbose:
                             print(f"Updating input schema for {cp.full_name}")
+                        continue
+                    elif param_name == "<UPDATE_STEP_TYPE>":
+                        cp.step_type = param_value
+                        if if_verbose:
+                            print(f"Updating step type for {cp.full_name}")
                         continue
 
                     elif hasattr(cp, "params") and param_name in cp.params:

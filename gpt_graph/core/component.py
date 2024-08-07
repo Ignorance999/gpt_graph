@@ -687,6 +687,16 @@ class Component(Closure):
             else:
                 # If it's a new key, add it to the schema
                 self.input_schema[key] = value
+                if key not in self.params:
+                    self.params[key] = {
+                        "type": "input",
+                        "status": "input",
+                        "value": "<INPUT>",
+                        "priority": 1000,
+                        "placeholder": None,
+                    }
+                else:
+                    self.params[key]["type"] = "input"
         return self
 
     def prepend(self, action, if_clone=True):
@@ -832,6 +842,10 @@ class Component(Closure):
 
         params = {}
         for param in signature.parameters.values():
+            # Skip parameters with VAR_KEYWORD kind (i.e., ** parameters)
+            if param.kind == inspect.Parameter.VAR_KEYWORD:
+                continue
+
             if param.name == "cp":
                 raise ValueError("cp as param is banned, it is used in cache")
             if param.name not in ignore_fields:
@@ -868,7 +882,7 @@ class Component(Closure):
                         param_info["value"] = "<INPUT>"
                         param_info["priority"] = 1000
                     elif (
-                        param.name in cache_fields and param.default == "<CACHE>"
+                        param.name in cache_fields  # and param.default == "<CACHE>"
                     ):  # NOTE: be very careful here
                         param_info["status"] = "cache"
                         param_info["value"] = "<CACHE>"

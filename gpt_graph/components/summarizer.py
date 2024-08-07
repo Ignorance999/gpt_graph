@@ -27,7 +27,7 @@ class Summarizer(Component, Graph):
     cache_schema = {
         "llm_model": {
             "type": LLMModel,
-            "default": lambda model_name: LLMModel(model_name),
+            "initializer": lambda model_name: LLMModel(model_name),
         }
     }
     output_schema = {"result": {"type": List[Dict[str, Any]]}}

@@ -1,7 +1,9 @@
 import uuid
 import weakref
+from functools import total_ordering
 
 
+@total_ordering
 class uuid_ex:
     _instances = weakref.WeakValueDictionary()
     _counter = -1
@@ -171,6 +173,16 @@ class uuid_ex:
         elif isinstance(other, (int, str, uuid.UUID)):
             return self.uuid == self._parse_uuid_value(other)
         return False
+
+    def __lt__(self, other):
+        if isinstance(other, uuid_ex):
+            return self.uuid < other.uuid
+        elif isinstance(other, (int, str, uuid.UUID)):
+            try:
+                return self.uuid < self._parse_uuid_value(other)
+            except ValueError:
+                return NotImplemented
+        return NotImplemented
 
 
 if __name__ == "__main__":

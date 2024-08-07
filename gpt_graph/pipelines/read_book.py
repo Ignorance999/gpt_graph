@@ -21,7 +21,7 @@ from gpt_graph.components import (
     DirFileLister,
     PDFSplitter,
     Summarizer,
-    PDFBookmarkSplitter,
+    #PDFBookmarkSplitter,
     Filter,
     Saver,
 )

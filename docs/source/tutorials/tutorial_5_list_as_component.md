@@ -3,6 +3,7 @@
 Note: you can refer to test/test_pipeline.py -> test_6_complex_pipeline_with_input_initializers()
 
 TODO: although the following works, the method to use bindings/linkings and $if_complete key in the source code is not ideal and subject to change.
+WARNING: this function is experimental and is not subject to many tests.
 
 ## Session Setup
 
@@ -84,4 +85,5 @@ The final output of the pipeline is 6.
 ## Note on Special Syntax
 
 The square brackets `[...]` in the pipeline definition `[s.i3, s.i1, s.i2]` indicate parallel processing of these components. This allows multiple inputs to be processed simultaneously and passed to the next component in the pipeline.
+
 

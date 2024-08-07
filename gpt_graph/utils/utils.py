@@ -52,38 +52,74 @@ def serialize_json_recursively(data, ignored_keys=None, included_keys=None):
 
 
 # %%
-def truncate_text(text, max_words):
+# def truncate_text(text, max_words):
+#     import re
+
+#     # Regular expression to identify Chinese characters
+#     chinese_char_pattern = re.compile(r"[\u4e00-\u9fff]")
+
+#     word_count = 0
+#     current_length = 0
+
+#     # Iterate through each character in the text
+#     for i, char in enumerate(text):
+#         if chinese_char_pattern.match(char):
+#             # If the character is Chinese, increment the word count
+#             if word_count == max_words:
+#                 break
+#             word_count += 1
+#         elif char == " ":
+#             # If the character is a space, increment the word count for the previous English word
+#             if word_count == max_words:
+#                 break
+#             word_count += 1
+#         elif i == len(text) - 1:
+#             # If it's the last character in the text and not a space, increment for the last word
+#             if word_count == max_words:
+#                 break
+#             word_count += 1
+
+#         # Add the character to the current length to be included in the final string
+#         current_length += 1
+
+
+#     # Return the truncated text
+#     return text[:current_length]
+def truncate_text(text, max_count, if_by_tokens=True, encoding_name="cl100k_base"):
     import re
+    import tiktoken
 
-    # Regular expression to identify Chinese characters
-    chinese_char_pattern = re.compile(r"[\u4e00-\u9fff]")
+    if if_by_tokens:
+        encoding = tiktoken.get_encoding(encoding_name)
+        encoded = encoding.encode(text)
 
-    word_count = 0
-    current_length = 0
+        if len(encoded) <= max_count:
+            return text
 
-    # Iterate through each character in the text
-    for i, char in enumerate(text):
-        if chinese_char_pattern.match(char):
-            # If the character is Chinese, increment the word count
-            if word_count == max_words:
-                break
-            word_count += 1
-        elif char == " ":
-            # If the character is a space, increment the word count for the previous English word
-            if word_count == max_words:
-                break
-            word_count += 1
-        elif i == len(text) - 1:
-            # If it's the last character in the text and not a space, increment for the last word
-            if word_count == max_words:
-                break
-            word_count += 1
+        truncated_encoded = encoded[:max_count]
+        return encoding.decode(truncated_encoded)
+    else:
+        chinese_char_pattern = re.compile(r"[\u4e00-\u9fff]")
+        word_count = 0
+        current_length = 0
 
-        # Add the character to the current length to be included in the final string
-        current_length += 1
+        for i, char in enumerate(text):
+            if chinese_char_pattern.match(char):
+                if word_count == max_count:
+                    break
+                word_count += 1
+            elif char == " ":
+                if word_count == max_count:
+                    break
+                word_count += 1
+            elif i == len(text) - 1:
+                if word_count == max_count:
+                    break
+                word_count += 1
 
-    # Return the truncated text
-    return text[:current_length]
+            current_length += 1
+
+        return text[:current_length]
 
 
 # Example usage:

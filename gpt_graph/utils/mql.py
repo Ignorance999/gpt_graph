@@ -3,18 +3,32 @@ from gpt_graph.utils.get_nested_value import get_nested_value
 
 
 def mql(documents, query, ignored_keys=None):
-    # NOTE: WRITE A BETTER introduction for the following, now use definition in utils
-    # def get_nested_value(obj, key):
-    #     """Retrieve value from nested dictionary or object using dot notation."""
-    #     keys = key.split(".")
-    #     for k in keys:
-    #         if isinstance(obj, dict):
-    #             obj = obj.get(k)
-    #         else:
-    #             obj = getattr(obj, k, None)
-    #         if obj is None:
-    #             return None
-    #     return obj
+    """
+    Perform a MongoDB-like query on a list of documents.
+
+    Args:
+    documents (list): List of documents(dict) to query.
+    query (dict): Query specification.
+    ignored_keys (list, optional): Keys to ignore in the query. Defaults to ["$if_complete"].
+
+    Returns:
+    list: Filtered and ordered list of documents matching the query.
+
+    The query can include the following special operators:
+    - $lambda: Custom filtering function.
+    - $order: Custom ordering specification.
+      For $order, the value can be an integer or a list of integers:
+      - If it's an integer, it selects the nth group after sorting.
+      - If it's a list of integers, it selects multiple groups and combines them.
+
+    Example:
+    query = {
+        "name": {"$regex": "^A"},
+        "age": {"$gt": 25, "$order": 0},
+        "skills": {"$lambda": lambda x: "Python" in x}
+    }
+    result = mql(documents, query)
+    """
 
     ignored_keys = ignored_keys or ["$if_complete"]
 
@@ -64,7 +78,7 @@ def mql(documents, query, ignored_keys=None):
                     cleaned_query[key][sub_key] = sub_value
         else:
             if key in ["$order", "$lambda"] + ignored_keys:
-                #custom_steps[key] = custom_steps.get(key, {})
+                # custom_steps[key] = custom_steps.get(key, {})
                 custom_steps[key] = value
             else:
                 cleaned_query[key] = value
@@ -102,11 +116,30 @@ def mql(documents, query, ignored_keys=None):
                 grouped_nodes.setdefault(value, []).append((custom_dict, original_doc))
 
             sorted_groups = sorted(grouped_nodes.items())
-            if len(sorted_groups) >= max(loc, 1):
-                filtered_nodes = sorted_groups[loc][1]
+
+            if isinstance(loc, str):
+                loc = int(loc)
+
+            if isinstance(loc, int):
+                loc = [loc]
+
+            if isinstance(loc, list):
+                if all(isinstance(item, str) for item in loc):
+                    loc = [int(item) for item in loc]
+
+                new_filtered_nodes = []
+                for index in loc:
+                    if len(sorted_groups) >= max(index, 1):
+                        new_filtered_nodes.extend(sorted_groups[index][1])
+                    # else:
+                    # filtered_nodes = []
+                filtered_nodes = new_filtered_nodes
+                if not filtered_nodes:
+                    break
             else:
-                filtered_nodes = []
-                break
+                raise ValueError(
+                    f"Invalid $order value for key {key}. Expected int or list of ints."
+                )
 
     # Return only the original documents
     result = [original_doc for _, original_doc in filtered_nodes]
@@ -125,6 +158,7 @@ if __name__ == "__main__":
         {"name": "Alice", "age": 22, "sex": "F", "extra": {"t": 3}},
         {"name": "Bob", "age": 30, "sex": "M", "extra": {"t": 3}},
         {"name": "Charlie", "age": 35, "sex": "M", "extra": {"t": 3}},
+        {"name": "Charlie", "age": 35, "sex": "M", "extra": {"t": 4}},
         {"name": "Diana", "age": 28, "sex": "F", "extra": {"t": 3}},
         {"name": "Eve", "age": 22, "sex": "F", "extra": {"t": 3}},
     ]
@@ -141,8 +175,8 @@ if __name__ == "__main__":
             "$lambda": lambda x: x / 5 == int(x / 5),
             # "$in": [23,25]
         },
-        "extra.t": {"$order": 0},
-        "uuid": {"$eq": uuid_ex("52757bc6-2e91-4d13-bfc9-27010f5b559c")},
+        "extra.t": {"$order": [0, 1]},
+        # "uuid": {"$eq": uuid_ex(16)},
     }
 
     # Sample query with $or operator

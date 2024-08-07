@@ -1,0 +1,14 @@
+[p6]
+[p6.InputInitializer]
+input_type = "<class 'str'>"
+input_name = "input"
+input_format = "plain"
+
+[p6.f4]
+z = "<CACHE>"
+y = 1
+
+[p6.f6]
+z = "<CACHE>"
+
+[p6.f5]

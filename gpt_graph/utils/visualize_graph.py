@@ -66,6 +66,29 @@ def visualize_graph(
             for i, value in enumerate(unique_edge_values)
         }
 
+    # def reorder_dict(d, priority_keys):
+    #     """
+    #     Reorder a dictionary to put certain keys at the top.
+
+    #     :param d: The input dictionary
+    #     :param priority_keys: A list of keys to be placed at the top, in the desired order
+    #     :return: A new dict with the specified order
+    #     """
+    #     # Create a new dict
+    #     new_dict = {}
+
+    #     # Add priority keys first, if they exist in the original dict
+    #     for key in priority_keys:
+    #         if key in d:
+    #             new_dict[key] = d[key]
+
+    #     # Add all other items
+    #     for key, value in d.items():
+    #         if key not in priority_keys:
+    #             new_dict[key] = value
+
+    #     return new_dict
+
     for node, attrs in G.nodes(data=True):
         x = y = None
         if all("step_id" in a for _, a in G.nodes(data=True)):  # All nodes have step_id
@@ -89,6 +112,8 @@ def visualize_graph(
         serialized_attrs = serialize_json_recursively(
             attrs, ignored_keys=ignored_attr, included_keys=included_attr
         )
+        # serialized_attrs = reorder_dict(serialized_attrs, ["step_name"])
+
         # TODO sort the included attr later
         net.add_node(str(node), x=x, y=y, **serialized_attrs)  # s, size=20
 
@@ -120,7 +145,7 @@ def visualize_graph(
     """)
 
     # Save the network as HTML file
-    # net.save_graph(html_file_path)
+    # net.save_graph(html_file_path) false
     net.show(html_file_path, notebook=False)
 
     # Additional HTML for interactive behavior
@@ -129,10 +154,36 @@ def visualize_graph(
     document.addEventListener("DOMContentLoaded", function() {
         var infoDiv = document.getElementById("infoDiv");
 
+        function reorderNodeData(nodeData) {
+            var priorityKeys = ["node_id", "step_name", "type"];  // Add or remove keys as needed
+            var reordered = {};
+            
+            // Add priority keys first
+            for (var i = 0; i < priorityKeys.length; i++) {
+                var key = priorityKeys[i];
+                if (key in nodeData) {
+                    reordered[key] = nodeData[key];
+                }
+            }
+            
+            // Add remaining keys
+            for (var key in nodeData) {
+                if (!priorityKeys.includes(key)) {
+                    reordered[key] = nodeData[key];
+                }
+            }
+            
+            return reordered;
+        }
+
+
         network.on("click", function(params) {
           if (params.nodes.length > 0) {
             var nodeId = params.nodes[0];
             var nodeData = network.body.data.nodes.get(nodeId);
+
+            // Reorder node data
+            var reorderedData = reorderNodeData(nodeData);
 
             var formattedData = JSON.stringify(nodeData, null, 4).replace(/\\\\n/g, '<br>');
 

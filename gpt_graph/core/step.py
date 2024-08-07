@@ -231,6 +231,12 @@ class Step:
         'priority': 0}}
         """
         input_keys = [*self.input_schema.keys()]
+        raw_input_params = {
+            key: param["value"]
+            for key, param in self.params.items()
+            if key in input_keys
+        }
+
         raw_params = {
             key: param["value"]
             for key, param in self.params.items()
@@ -418,9 +424,15 @@ class Step:
                 #    #NOTE: you can set filter_cri in normal param
                 #    input_filter_cri = params[input_key]
                 # else:
-                input_filter_cri = input_details.get(
-                    "filter_cri", {"step_id": {"$order": -1}}
-                )
+                temp = raw_input_params.get(input_key, False)
+                if temp and isinstance(
+                    temp, dict
+                ):  # not only can get, but is not empty
+                    input_filter_cri = temp
+                else:
+                    input_filter_cri = input_details.get(
+                        "filter_cri", {"step_id": {"$order": -1}}
+                    )
 
                 if input_dim is None:
                     if (
@@ -433,11 +445,14 @@ class Step:
 
                 if self.params[input_key]["status"] == "ult_input":
                     input_key_nodes = params.get(input_key)
-                    input_key_nodes = (
-                        [input_key_nodes]
-                        if not isinstance(input_key_nodes, list)
-                        else []
-                    )
+
+                    if step_type in ("list_to_node", "list_to_list") and isinstance(
+                        input_key_nodes, list
+                    ):
+                        pass
+                    else:
+                        input_key_nodes = [input_key_nodes]
+
                 else:
                     if input_dim == -1:
                         # when input_dim is -1, the whole list of nodes will be input into self.cp_run_func
@@ -475,27 +490,102 @@ class Step:
                             )
                             first_nodes = input_key_data[first_key]["nodes"]
 
-                            # set children = first_nodes so as to match number of nodes as first nodes
-                            input_key_nodes = [
-                                self.node_graph.default_get_input_nodes(
-                                    filter_cri=input_filter_cri,  # params.get(input_key, input_filter_cri),
-                                    children=node,
-                                    if_inclusive=True,
-                                )
-                                for node in first_nodes
-                            ]
-                            input_key_nodes = [
-                                item for sublist in input_key_nodes for item in sublist
-                            ]
+                            # Try default method first
+                            input_key_nodes = self.node_graph.default_get_input_nodes(
+                                filter_cri=input_filter_cri,
+                                if_inclusive=True,
+                            )
 
-                            # if prev method fails, try another method
+                            # If the number of nodes doesn't match, try to match using relatives
                             if len(input_key_nodes) != len(first_nodes):
-                                input_key_nodes = self.node_graph.default_get_input_nodes(
-                                    filter_cri=input_filter_cri,  # params.get(input_key, input_filter_cri),
-                                    if_inclusive=True,
+                                indices_to_remove = []
+                                temp_key_nodes = []
+                                for i, node in enumerate(first_nodes):
+                                    relatives = self.node_graph.default_get_input_nodes(
+                                        filter_cri=input_filter_cri,
+                                        relatives=node,
+                                        if_inclusive=True,
+                                    )
+                                    if not relatives:
+                                        indices_to_remove.append(i)
+                                    else:
+                                        temp_key_nodes.extend(relatives)
+
+                                input_key_nodes = temp_key_nodes
+
+                                if indices_to_remove:
+                                    # Remove nodes without relatives from first_nodes and all previous input_key_data
+                                    for key, data in input_key_data.items():
+                                        if (
+                                            data["dim"] == input_dim
+                                            and data["dim"] != -1
+                                        ):
+                                            data["nodes"] = [
+                                                node
+                                                for i, node in enumerate(data["nodes"])
+                                                if i not in indices_to_remove
+                                            ]
+                                            if "parent_nodes" in data and len(
+                                                data.get("parent_nodes")
+                                            ) == data.get("nodes"):
+                                                data["parent_nodes"] = [
+                                                    node
+                                                    for i, node in enumerate(
+                                                        data["parent_nodes"]
+                                                    )
+                                                    if i not in indices_to_remove
+                                                ]
+
+                                    # the following line is purely for checking purposes
+                                    first_nodes = [
+                                        node
+                                        for i, node in enumerate(first_nodes)
+                                        if i not in indices_to_remove
+                                    ]
+
+                                    print(
+                                        f"Warning: Removed {len(indices_to_remove)} nodes without matching relatives for {input_key} and previous keys with same dimension"
+                                    )
+
+                            # the following line is quite useless, but for clearer code.
+                            if len(input_key_nodes) != len(first_nodes):
+                                raise Exception(
+                                    f"Mismatch in node count for {input_key}. Expected {len(first_nodes)}, got {len(input_key_nodes)}"
                                 )
-                            if len(input_key_nodes) != len(first_nodes):
-                                raise Exception("Mismatch in node count")
+
+                            # # get the first key with same dim
+                            # first_key = next(
+                            #     (
+                            #         key
+                            #         for key, value in input_schema.items()
+                            #         if value.get("dim", 0) == input_dim
+                            #     ),
+                            #     None,
+                            # )
+                            # first_nodes = input_key_data[first_key]["nodes"]
+
+                            # # set children = first_nodes so as to match number of nodes as first nodes
+                            # input_key_nodes = [
+                            #     self.node_graph.default_get_input_nodes(
+                            #         filter_cri=input_filter_cri,  # params.get(input_key, input_filter_cri),
+                            #         relatives=node,
+                            #         # children=node,
+                            #         if_inclusive=True,
+                            #     )
+                            #     for node in first_nodes
+                            # ]
+                            # input_key_nodes = [
+                            #     item for sublist in input_key_nodes for item in sublist
+                            # ]
+
+                            # # if prev method fails, try another method
+                            # if len(input_key_nodes) != len(first_nodes):
+                            #     input_key_nodes = self.node_graph.default_get_input_nodes(
+                            #         filter_cri=input_filter_cri,  # params.get(input_key, input_filter_cri),
+                            #         if_inclusive=True,
+                            #     )
+                            # if len(input_key_nodes) != len(first_nodes):
+                            #     raise Exception("Mismatch in node count")
 
                 # Apply source field logic for each param
                 processed = []
@@ -612,28 +702,30 @@ class Step:
                 parent_nodes = d["parent_nodes"]
                 result = d["func_result"]
 
-                # Create a new dictionary that prioritizes result keys over output_info keys
-                node_params = output_info.copy()
-
                 if output_format in ("node_like", "node"):
-                    for key, value in result.items():
-                        if key not in ["content", "extra"]:
-                            node_params[key] = value
+                    # Create a new dictionary that prioritizes result keys over output_info keys
+                    node_params = output_info.copy()
+                    if isinstance(result, dict):
+                        node_params.update(result)
 
-                    node_content = result.get("content")
-                    node_extra = result.get("extra", {})
+                    # Explicitly handle content and extra
+                    node_content = node_params.pop("content", None)
+                    node_extra = node_params.pop("extra", {})
+
+                    # Handle parent_nodes
+                    parent_nodes = node_params.pop("parent_nodes", parent_nodes)
+
                     new_node = self.node_graph.add_node(
                         content=node_content,
-                        **node_params,
-                        # **output_info,
                         extra=node_extra,
                         parent_nodes=parent_nodes,
                         step_id=self.step_id,
                         step_name=self.full_name,
                         cp_name=self.cp_name,
-                        # bp_name=self.bp_name,
+                        **node_params,
                     )
                     new_nodes.append(new_node)
+
                 elif output_format == "graph":
                     # Add missing information to nodes in the result graph
                     for _, data in result.nodes(data=True):
@@ -671,9 +763,9 @@ class Step:
                         step_id=self.step_id,
                         step_name=self.full_name,
                         cp_name=self.cp_name,
+                        parent_nodes=parent_nodes,
                         # bp_name=self.bp_name,
                         **output_info,
-                        parent_nodes=parent_nodes,
                     )
                     new_nodes.append(new_node)
 
@@ -749,6 +841,7 @@ class Step:
         ----------------
         1. "a" is the param key, "yyy" is the cache key to grab the value in cache
         2. Special "<SELF>" parameter
+        3. if <TEMP> is used as key, things will be initialize all the time. as it means the things is just a temp, so they will not be stored in cache as well.
 
         Handling Regular Parameters:
         ----------------------------
@@ -785,33 +878,53 @@ class Step:
             cache_key = self.get_cache_key(key=key)
 
             # Check if the key exists in the cache
-            if cache_key not in self.cache:
+            if cache_key not in self.cache or cache_key == "<TEMP>":
                 # If not in cache, use initializer to create it
                 if "initializer" in schema:
-                    # Inspect the initializer's parameters
-                    import inspect
+                    if callable(schema["initializer"]):
+                        # Inspect the initializer's parameters
+                        import inspect
 
-                    init_params = inspect.signature(schema["initializer"]).parameters
+                        init_params = inspect.signature(
+                            schema["initializer"]
+                        ).parameters
 
-                    # Prepare arguments for the initializer
-                    args = {}
-                    for param_name in init_params:
-                        if param_name in self.params:
-                            args[param_name] = self.params[param_name]["value"]
-                        elif param_name in self.cache:
-                            args[param_name] = self.cache[param_name]
-                        else:
-                            raise ValueError(
-                                f"Cannot find value for parameter: {param_name}"
-                            )
+                        # Prepare arguments for the initializer
+                        args = {}
+                        for param_name in init_params:
+                            if param_name in self.params:
+                                args[param_name] = self.params[param_name]["value"]
+                            elif param_name in self.cache:
+                                args[param_name] = self.cache[param_name]
+                            else:
+                                raise ValueError(
+                                    f"Cannot find value for parameter: {param_name}"
+                                )
 
-                    # Initialize and store in cache
-                    self.cache[cache_key] = schema["initializer"](**args)
+                        # Initialize and store in cache
+                        initialized_value = schema["initializer"](**args)
+
+                    elif isinstance(schema["initializer"], str) and re.match(
+                        r"^\[.*\]$", schema["initializer"]
+                    ):
+                        # Initializer is a string
+                        attr_path = schema["initializer"][1:-1]  # Remove brackets
+                        initialized_value = utils.get_nested_value(self, attr_path)
+                    else:
+                        raise ValueError(
+                            f"Unsupported initializer type: {type(schema['initializer'])}"
+                        )
+
+                    if cache_key != "<TEMP>":
+                        self.cache[cache_key] = initialized_value
                 else:
                     raise ValueError(f"No initializer found for cache key: {cache_key}")
+            else:
+                initialized_value = self.cache[cache_key]
 
             # Update the param value with the cached value
-            cache_params[key] = self.cache[cache_key]
+            cache_params[key] = initialized_value
+
         return cache_params
 
     # TODO: the following is added later, after most of the things finished

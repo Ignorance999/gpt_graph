@@ -116,4 +116,4 @@ if __name__ == "__main__":
     # extracted_file_path = extractor.run(
     #     word_limit=500, if_save=True, if_return_path=True
     # )
-    # print(extracted_file_path)
+    # print(extracted_file_pat

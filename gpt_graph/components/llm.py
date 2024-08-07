@@ -30,6 +30,7 @@ import numpy as np
 from jsonfinder import only_json
 import inspect
 import gpt_graph.prompts.prompts_components_llm as prompts
+import time
 
 try:
     from gpt_graph.components.llm_poe import LLM_POE
@@ -83,6 +84,12 @@ class LLMModel(Component):
 
     """
 
+    step_type = ["node_to_node", "list_to_node", "list_to_list"]
+    input_schema = {"input_data": {"type": str, "field": "content"}}
+    cache_schema = {}
+    output_schema = {"result": {"type": str}}
+    output_format = "plain"
+
     def __init__(self, model_name=None, if_initialize_poe=False):
         super().__init__(if_auto_detect_input=True)
         # Initialize the different models with a nickname map and a boolean indicating if it's an OpenAI model
@@ -103,7 +110,7 @@ class LLMModel(Component):
         with open(file_path, "rb") as f:
             self.model_nickname_map = tomli.load(f)
 
-        self.curr_model_name = model_name if model_name is not None else "chat_mistral"
+        self.curr_model_name = model_name if model_name is not None else "test"
         self.current_model_info = self.model_nickname_map[self.curr_model_name]
 
         if if_initialize_poe:
@@ -133,10 +140,10 @@ class LLMModel(Component):
         output_schema=None,
         verbose=False,
         if_return_prompt=False,
+        wait_time: float = 0,  # for batch input can use this
         # if_output_np = False,
         **kwargs,
         # batch_size: int = 5, for batch input can use this
-        # wait_time: float = 1.0, for batch input can use this
     ) -> Union[str, list, dict]:
         output_type = output_type or "string"
 
@@ -147,9 +154,34 @@ class LLMModel(Component):
 
         if model_name == "test":
             import uuid
+            import random
 
-            output = f"{uuid.uuid1()}, The output is: {str(input_data)[:100]}"
-            messages = [{"role": "user", "content": str(input_data)[:100]}]
+            char_limit = 80
+
+            def generate_test_output(output_type, input_data):
+                if output_type == "string":
+                    return (
+                        f"{uuid.uuid1()}, The output is: {str(input_data)[:char_limit]}"
+                    )
+                elif output_type == "list":
+                    return [str(uuid.uuid1()) for _ in range(random.randint(1, 5))]
+                elif output_type == "json" or output_type == "dict":
+                    return {
+                        "id": str(uuid.uuid1()),
+                        "content": str(input_data)[:char_limit],
+                    }
+                elif output_type == "boolean":
+                    return random.choice([True, False])
+                elif output_type == "list_dict":
+                    return [
+                        {"id": str(uuid.uuid1()), "content": str(input_data)[:50]}
+                        for _ in range(random.randint(1, 3))
+                    ]
+                else:
+                    return f"Unsupported output_type: {output_type}"
+
+            output = generate_test_output(output_type, input_data)
+            messages = [{"role": "user", "content": str(input_data)[:char_limit]}]
             if if_return_prompt:
                 return output, messages
             else:
@@ -193,11 +225,14 @@ class LLMModel(Component):
         self._messages = messages  # for debug
         self._tools = tools  # for debug
         self._class_schema = class_schema
+        self._output_type = output_type
         if verbose:
             print("messages:", {j: k[:500] for i in messages for j, k in i.items()})
 
         attempt = 0
         if max_fail_trials > 0:
+            if wait_time:
+                time.sleep(wait_time)
             response = self._get_model_response(input_type, messages, tools, **kwargs)
             self._response_raw = response  # for debug
             try:
@@ -617,7 +652,7 @@ if __name__ == "__main__":
     )
     print(result)
     # %%
-    m3 = LLMModel(model_name="groq")
+    m3 = LLMModel(model_name="groq_tool")
     result = m3.run("explain to me what is hello world")
     result = m3.run(["list 2 fruits", "list 2 kinds of dogs"], output_type="list")
 

@@ -153,7 +153,7 @@ class Pipeline(Component):
         Routes to a specific step or multiple steps, creating sub-steps as needed.
 
         Args:
-            step_name (str or list): Name(s) of the step(s) to route to.
+            step_name (str or list): Name(s) of the Component(s) to route to.
             params (dict, optional): Parameters to pass to the created sub-step. Defaults to {}.
 
         Behavior:
