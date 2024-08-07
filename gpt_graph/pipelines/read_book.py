@@ -17,7 +17,7 @@ from gpt_graph.components import (
     TextExtractor,
     TextToSpeech,
     GoogleDriveUploader,
-    YouTubeLister,
+    #YouTubeLister,
     DirFileLister,
     PDFSplitter,
     Summarizer,
@@ -43,7 +43,7 @@ class ReadBook(Pipeline):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.filter = Filter()
-        self.youtube_lister = YouTubeLister()
+        #self.youtube_lister = YouTubeLister()
         self.dir_file_lister = DirFileLister()
         self.pdf_splitter = PDFSplitter()
         self.summarizer = Summarizer()
@@ -63,7 +63,7 @@ class ReadBook(Pipeline):
             self.set_data,  # router
             self.pdf_splitter,  # router
             self.dir_file_lister,  # router
-            self.youtube_lister,  # router
+            #self.youtube_lister,  # router
             # self.webscraper,  # router
             self.text_extract,  # router
         ]

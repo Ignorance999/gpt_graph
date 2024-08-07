@@ -26,3 +26,4 @@ gtts # for tts
 pydub # for tts
 pydantic
 
+PyPDF2

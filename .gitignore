@@ -1,3 +1,4 @@
 gpt_graph.egg-info/
 tox.ini
 **__pycache__**
+.tox/
